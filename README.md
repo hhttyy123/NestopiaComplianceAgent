@@ -6,16 +6,35 @@
 
 ## 本地运行
 
+### 环境要求
+
+- Node.js **>= 20.9**（Next.js 16 要求），推荐 22 LTS
+- 可用的 Poppler `pdftotext`：Windows 可用 Git 自带的版本，也可在 `.env.local` 里用 `PDFTOTEXT_BIN` 指定 `pdftotext.exe` 的完整路径；VPS 镜像已配置安装
+- 一个 DeepSeek API Key（AI 分析必需）
+
+### 步骤
+
 ```powershell
+# 1. 克隆并安装依赖
+git clone https://github.com/<your-username>/NestopiaComplianceAgent.git
+cd NestopiaComplianceAgent
 npm ci
+
+# 2. 配置环境变量：复制模板后填入密钥
+Copy-Item .env.example .env.local
+# 编辑 .env.local，填入 DEEPSEEK_API_KEY，模型保持 deepseek-flash
+
+# 3. 初始化数据库（创建 data/nestopia.sqlite）
 npm run setup
+
+# 4. 构建并启动
 npm run build
 npm start
 ```
 
-本地需可用的Poppler `pdftotext`（Windows可用Git自带版本，也可通过PDFTOTEXT_BIN指定完整路径）；VPS镜像已配置安装。
+开发时用热更新模式：`npm run dev`。
 
-服务端 `.env.local` 配置 `DEEPSEEK_API_KEY`，模型 `deepseek-flash`。访问 http://127.0.0.1:3000 。已有服务时勿重复启动；不能让两个实例共享 DATA_DIR。不要提交密钥。
+启动后访问 http://127.0.0.1:3000 。已有服务时勿重复启动；不能让两个实例共享 DATA_DIR。不要提交密钥。
 
 ## 交付资料
 
