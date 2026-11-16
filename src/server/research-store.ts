@@ -1,0 +1,16 @@
+import type {ProjectDetails} from '../domain/project';
+import { createHash,randomUUID } from 'node:crypto';
+import { z } from 'zod';
+import { getDb } from './db';
+import { ResearchError } from './provider';
+import type { ResearchRun } from '../domain/research';
+export const digest=(v:unknown)=>createHash('sha256').update(JSON.stringify(v)).digest('hex');
+export function saveRun(run:ResearchRun){run.updatedAt=new Date().toISOString();getDb().prepare('UPDATE research_runs SET payload=? WHERE id=?').run(JSON.stringify(run),run.id);}
+export function readRun(id:string,includeDeleted=false):ResearchRun{const row=getDb().prepare('SELECT payload FROM research_runs WHERE id=?').get(id);if(!row)throw new ResearchError('NOT_FOUND','调查记录不存在');const run=JSON.parse(String(row.payload)) as ResearchRun;if(run.deletedAt&&!includeDeleted)throw new ResearchError('NOT_FOUND','调查已删除');return run;}
+export function listRuns(){return getDb().prepare('SELECT payload FROM research_runs ORDER BY created_at DESC').all().map(r=>JSON.parse(String(r.payload)) as ResearchRun).filter(r=>!r.deletedAt).slice(0,100);}
+export function feedback(id:string,raw:unknown){readRun(id);const values=z.object({kind:z.enum(['CORRECTION','SUPPORTED','NOTE']),text:z.string().trim().min(1).max(6000),evidenceUrl:z.url().optional()}).strict().parse(raw);if(values.evidenceUrl&&new URL(values.evidenceUrl).protocol!=='https:')throw new ResearchError('INVALID_INPUT','依据链接必须使用HTTPS');const record={...values,id:randomUUID(),runId:id,createdAt:new Date().toISOString()};getDb().prepare('INSERT INTO research_feedback VALUES (?,?,?,?,?)').run(record.id,id,record.kind,JSON.stringify(record),record.createdAt);return record;}
+export function feedbackFor(id:string){return getDb().prepare('SELECT payload FROM research_feedback WHERE run_id=? ORDER BY created_at DESC').all(id).map(r=>JSON.parse(String(r.payload)));}
+export function experiences(product:string,location:string,details?:ProjectDetails){const all=getDb().prepare('SELECT payload FROM research_runs ORDER BY created_at DESC').all().map(row=>JSON.parse(String(row.payload)) as ResearchRun).filter(r=>!r.deletedAt);return all.filter(r=>r.status==='COMPLETE'&&r.input.product.toLowerCase()===product.toLowerCase()&&(details&&r.input.details?r.input.details.state===details.state&&r.input.details.county===details.county&&r.input.details.method===details.method:r.input.location.toLowerCase()===location.toLowerCase())).slice(0,4).map(r=>{const notes=feedbackFor(r.id);const corrected=notes.some(n=>n.kind==='CORRECTION');return {id:r.id,input:r.input,answerStructure:{version:r.answerStructureVersion||'legacy',answers:corrected?[]:r.analysis?.answers,evaluation:corrected?undefined:r.analysis?.evaluation,reviewOrder:['辖区','适用条件','原文依据','直接回答','后续行动'],reuse:'复用结构和核对项，结论按当前证据重新生成'},missing:r.analysis?.missing,nextSteps:corrected?[]:r.analysis?.nextSteps,feedback:notes,trust:corrected?'本报告已收到纠错；不得沿用原建议，必须重新查证':'历史调查与反馈只用于提示问题，不是法规证据'};});}
+
+export function deleteRun(id:string){const run=readRun(id);if(run.status==='RUNNING')throw new ResearchError('REQUEST_CONFLICT','调查完成后可删除');run.deletedAt=new Date().toISOString();saveRun(run);return {id,deletedAt:run.deletedAt};}
+export function restoreRun(id:string){const run=readRun(id,true);delete run.deletedAt;saveRun(run);return {id};}

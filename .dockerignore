@@ -1,0 +1,16 @@
+node_modules
+.next
+.env*
+!.env.example
+data
+tmp
+archive
+knowledge
+.git
+.agents
+.codex
+*.pdf
+*.ppt*
+*.tsbuildinfo
+test-results
+output

@@ -1,0 +1,15 @@
+import { z } from 'zod';
+import {modelJson,ResearchError} from './provider';
+import {trace} from './trace';
+export type OutputStage='plan'|'evidence'|'assessment'|'timeline'|'review';
+const fields={plan:['jurisdiction','queries','missing','issues'],evidence:['summary','jurisdiction','findings','missing','nextSteps','timing'],assessment:['checks','permits'],timeline:['cases','assumptions','stages'],review:['reviewedFindings','reviewedChecks','reviewedPermits','reviewedStages','reviewedCases','issues']} as const;
+export function normalizeStage(raw:unknown,stage:OutputStage){if(!raw||typeof raw!=='object'||Array.isArray(raw))return raw;const root=raw as Record<string,unknown>;const evaluation=root.evaluation&&typeof root.evaluation==='object'?root.evaluation as Record<string,unknown>:undefined;let source=root;
+ if(stage==='assessment')source=evaluation||root;
+ if(stage==='timeline'){const choices=[root.timeline,evaluation?.timeline,root.stages?root:undefined].filter(v=>v&&typeof v==='object') as Record<string,unknown>[];if(choices.length>1&&choices.some(v=>JSON.stringify(v)!==JSON.stringify(choices[0])))throw new ResearchError('OUTPUT_CONFLICT','不同层级的流程内容冲突');source=choices[0]||root;}
+ const out=Object.fromEntries(fields[stage].filter(key=>source[key]!==undefined).map(key=>[key,source[key]]));
+ if(JSON.stringify(raw)!==JSON.stringify(out))trace('OUTPUT_NORMALIZED','按阶段提取输出字段',{stage,notice:'仅调整层级并移除其他阶段或废弃字段，不改变字段值'});return out;
+}
+export async function structuredOutput<T>(stage:OutputStage,schema:z.ZodType<T>,prompt:string,input:Record<string,unknown>,validate?:(v:T)=>void):Promise<T>{let invalidOutput:unknown,validationErrors:unknown;
+ for(let attempt=1;attempt<=3;attempt++){let raw:unknown;try{raw=await modelJson(prompt+' 返回数据实例，不得复制JSON Schema本身；禁止输出$schema、type、properties、required等模式定义字段。 本次仅生成阶段 '+stage+'，只输出下面Schema的根对象，不输出其他阶段，不要answers，不要额外evaluation包装。严格JSON Schema：'+JSON.stringify(z.toJSONSchema(schema)),{...input,stage,...(attempt>1?{invalidOutput,validationErrors,correction:'只修复指出的问题，不新增法规事实；保留原文逐字引用。'}:{})});const value=schema.parse(normalizeStage(raw,stage));validate?.(value);trace('STAGE_VALIDATED','阶段结构与依据校验通过',{stage,attempt});return value;}catch(error){const retryable=error instanceof z.ZodError||error instanceof ResearchError&&['MODEL_JSON','MODEL_INCOMPLETE','INVALID_RESPONSE','INVALID_CITATION','INVALID_ANSWER','INVALID_EVALUATION','INVALID_REVIEW','UNCITED_FINDING','MISSING_CATEGORY','MISSING_CASE_OUTCOME','CASE_AS_LAW','OUTPUT_CONFLICT'].includes(error.code);validationErrors=error instanceof z.ZodError?error.issues:error instanceof ResearchError?{code:error.code,message:error.message,details:error.details}:error instanceof Error?error.message:'校验失败';invalidOutput=raw||(error instanceof ResearchError?error.details:undefined);trace('VALIDATION_ERROR','阶段输出需要修复',{stage,attempt,error:error instanceof Error?error.message:'校验失败',details:validationErrors});if(attempt===3||!retryable)throw error;}}
+ throw new ResearchError('OUTPUT_FAILED','阶段未生成结果');
+}

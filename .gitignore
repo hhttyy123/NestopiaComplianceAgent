@@ -1,0 +1,52 @@
+# ---------- 依赖 ----------
+node_modules/
+.pnp
+.pnp.js
+
+# ---------- 构建产物 ----------
+.next/
+out/
+dist/
+build/
+.turbo/
+.swc/
+*.tsbuildinfo
+
+# 本项目的发布包（scripts 生成的 VPS 交付目录）
+output/
+
+# ---------- 测试与覆盖率 ----------
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+blob-report/
+.vitest/
+
+# ---------- 环境变量与密钥 ----------
+.env
+.env.*
+!.env.example
+
+# ---------- 运行时数据（SQLite、下载的官方原文等） ----------
+data/
+tmp/
+*.log
+logs/
+
+# ---------- 缓存 ----------
+.eslintcache
+.stylelintcache
+.cache/
+
+# ---------- 编辑器 ----------
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# ---------- 操作系统 ----------
+.DS_Store
+Thumbs.db
+Desktop.ini

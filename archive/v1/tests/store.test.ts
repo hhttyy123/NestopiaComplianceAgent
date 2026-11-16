@@ -1,0 +1,20 @@
+import { beforeAll, describe, expect, it } from 'vitest';
+import { mkdtempSync, mkdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
+import initSqlJs from 'sql.js';
+import { fixtures } from '../src/domain/fixtures';
+import { initializeDb, getDb } from '../src/server/db';
+import { addKnowledgeChange, addNote, controlKnowledge, createProject, getProject, getReview, knowledge, listReviews, runReview, updateProject } from '../src/server/store';
+let dataDir: string;
+beforeAll(async () => { mkdirSync('tmp', { recursive: true }); dataDir = mkdtempSync(path.resolve('tmp/store-test-')); process.env.DATA_DIR = dataDir; await initializeDb(); });
+describe('持久保存、版本与纠错', () => {
+  it('项目保存可找回', () => { const p = createProject(fixtures[0]); expect(getProject(p.id)).toEqual(p); });
+  it('幂等提交与冲突保护', () => { const p = createProject(fixtures[0]); const first = runReview(p.id, 1, 'key'); expect(runReview(p.id, 1, 'key').id).toBe(first.id); expect(listReviews(p.id)).toHaveLength(1); expect(() => runReview(p.id, 2, 'key')).toThrow('不一致'); });
+  it('旧修订不得覆盖新资料', () => { const p = createProject(fixtures[0]); updateProject(p.id, { ...fixtures[0], name: '新名字' }, 1); expect(() => updateProject(p.id, fixtures[0], 1)).toThrow('项目已更新'); expect(() => runReview(p.id, 1, 'old')).toThrow('资料已变更'); });
+  it('纠正事实后重审，旧报告及旧输入保持原样', () => { const p = createProject(fixtures[1]); const old = runReview(p.id, 1, 'first'); updateProject(p.id, fixtures[0], 1); const latest = runReview(p.id, 2, 'second'); expect(old.result.conclusion).toBe('CONFLICT'); expect(latest.result.conclusion).toBe('PRELIMINARY_PASS'); expect(getReview(old.id).input.aduArea).toBe(1300); expect(getReview(old.id).stale).toBe(true); expect(latest.sequence).toBe(2); });
+  it('人工意见保留自动判断，校验事项归属', () => { const p = createProject(fixtures[1]); const r = runReview(p.id, 1, 'note'); addNote(r.id, { actor: '测试审核人', kind: '判断纠错', text: '原面积录入有误', evidence: '模拟图纸编号', itemId: 'area' }); expect(getReview(r.id).notes).toHaveLength(1); expect(getReview(r.id).result.conclusion).toBe('CONFLICT'); expect(() => addNote(r.id, { actor: 'A', kind: '专业意见', text: 'x', evidence: 'y', itemId: 'not-in-review' })).toThrow('不属于'); });
+  it('规则停用影响新审查，历史保留原始结论', () => { const p = createProject(fixtures[0]); const old = runReview(p.id, 1, 'before'); controlKnowledge(true, '待核实', '测试维护者'); const current = runReview(p.id, 1, 'after'); expect(current.result.conclusion).toBe('PROFESSIONAL_REVIEW'); expect(getReview(old.id).result.conclusion).toBe('PRELIMINARY_PASS'); expect(getReview(old.id).knowledgeBlocked).toBe(true); controlKnowledge(false, '已核对原来源', '测试维护者'); });
+  it('知识建议关联原案例并保持待核实', () => { const p = createProject(fixtures[0]); const r = runReview(p.id, 1, 'change'); addKnowledgeChange(r.id, '测试维护者', '建议补充例外判断及依据'); expect(knowledge().changes[0].status).toBe('待核实'); });
+  it('事务失败整体回滚', () => { const before = getDb().prepare('SELECT COUNT(*) AS n FROM projects').get()!.n; expect(() => getDb().transaction(() => { createProject(fixtures[0]); throw new Error('模拟失败'); })()).toThrow('模拟失败'); expect(getDb().prepare('SELECT COUNT(*) AS n FROM projects').get()!.n).toBe(before); });
+  it('导出的文件为可恢复SQLite数据库', async () => { const destination = path.join(dataDir, 'backup.sqlite'); await getDb().backup(destination); const SQL = await initSqlJs({ locateFile: f => path.resolve('node_modules/sql.js/dist', f) }); const restored = new SQL.Database(readFileSync(destination)); expect(restored.exec('SELECT COUNT(*) FROM projects')[0].values[0][0]).toBeGreaterThan(0); expect(restored.exec('PRAGMA integrity_check')[0].values[0][0]).toBe('ok'); restored.close(); });
+});

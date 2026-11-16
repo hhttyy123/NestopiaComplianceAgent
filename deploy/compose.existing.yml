@@ -1,0 +1,28 @@
+# 与原docker-compose.yml合用；相对路径以原Compose文件所在目录为准。
+services:
+  nestopia:
+    build:
+      context: ./nestopia
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 30s
+    env_file:
+      - ./nestopia/.env.production
+    environment:
+      NODE_ENV: production
+      DATA_DIR: /app/data
+    expose:
+      - "3000"
+    volumes:
+      - nestopia-data:/app/data
+    networks:
+      - chem-network
+    mem_limit: 1536m
+    cpus: 1.0
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  nestopia-data:

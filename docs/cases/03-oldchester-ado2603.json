@@ -1,0 +1,33 @@
+{
+  "product": "ADU",
+  "location": "Montgomery County, Maryland",
+  "facts": "See structured project details",
+  "details": {
+    "product": "ADU（附属住宅）",
+    "method": "新建独立建筑",
+    "country": "United States",
+    "state": "Maryland",
+    "county": "Montgomery County",
+    "city": "Bethesda",
+    "unit": "IMPERIAL",
+    "purpose": "尚未确定",
+    "water": "UNKNOWN",
+    "sewer": "UNKNOWN",
+    "flood": "UNKNOWN",
+    "historic": "UNKNOWN",
+    "hoa": "UNKNOWN",
+    "existingHome": "YES",
+    "primaryType": "DETACHED",
+    "jurisdiction": "COUNTY",
+    "street": "7709 Oldchester Road, MD 20817",
+    "area": 965,
+    "primaryArea": 2700,
+    "lotArea": 10500,
+    "parkingArea": 1500,
+    "notes": "后续申请ADO26-03，DHCA157919。业主居住及停车争议未作为用户已核实事实；2026年最终决定与旧申请分别核对。不得只依据2025年初检给出获批结论。",
+    "referenceUrls": [
+      "https://assets.montgomerycountymd.gov/files/2026-04/ADO26-03-Favali-Report-and-Decision-Final_0.pdf"
+    ]
+  },
+  "refresh": false
+}

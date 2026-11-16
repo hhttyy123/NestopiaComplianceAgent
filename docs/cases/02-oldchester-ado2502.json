@@ -1,0 +1,29 @@
+{
+  "product": "ADU",
+  "location": "Montgomery County, Maryland",
+  "facts": "See structured project details",
+  "details": {
+    "product": "ADU（附属住宅）",
+    "method": "新建独立建筑",
+    "country": "United States",
+    "state": "Maryland",
+    "county": "Montgomery County",
+    "city": "Bethesda",
+    "unit": "IMPERIAL",
+    "purpose": "尚未确定",
+    "water": "UNKNOWN",
+    "sewer": "UNKNOWN",
+    "flood": "UNKNOWN",
+    "historic": "UNKNOWN",
+    "hoa": "UNKNOWN",
+    "existingHome": "YES",
+    "primaryType": "DETACHED",
+    "jurisdiction": "COUNTY",
+    "street": "7709 Oldchester Road, MD 20817",
+    "notes": "历史申请ADO25-02，DHCA151423。存在业主主要居所争议；读取最终决定，不得将初检等同最终许可。尺寸未从此申请决定中独立核实，留空；不要以2026年后续申请的数据填补。",
+    "referenceUrls": [
+      "https://www.montgomerycountymd.gov/OZAH/Resources/Files/pdf/2024/ADO2502No%20151423%20FINAL.pdf"
+    ]
+  },
+  "refresh": false
+}

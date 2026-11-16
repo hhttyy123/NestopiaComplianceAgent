@@ -1,0 +1,36 @@
+{
+  "product": "ADU",
+  "location": "Montgomery County, Maryland",
+  "facts": "See structured project details",
+  "details": {
+    "product": "ADU（附属住宅）",
+    "method": "新建独立建筑",
+    "country": "United States",
+    "state": "Maryland",
+    "county": "Montgomery County",
+    "city": "Bethesda",
+    "unit": "IMPERIAL",
+    "purpose": "尚未确定",
+    "water": "UNKNOWN",
+    "sewer": "UNKNOWN",
+    "flood": "UNKNOWN",
+    "historic": "UNKNOWN",
+    "hoa": "UNKNOWN",
+    "existingHome": "YES",
+    "primaryType": "DETACHED",
+    "jurisdiction": "COUNTY",
+    "street": "7012 Braeburn Place, MD 20817",
+    "area": 700,
+    "primaryArea": 2900,
+    "zoning": "R-60",
+    "ownerOccupied": "YES",
+    "parkingSpaces": 0,
+    "transitWithinMile": "NO",
+    "notes": "历史申请ADW24-02，DHCA153298。拟建独立ADU；无现场停车位。核对2024年停车豁免与现行建设许可的区别。不得把停车豁免当作建筑许可。",
+    "referenceUrls": [
+      "https://www.montgomerycountymd.gov/OZAH/Resources/Files/pdf/2024/ADW%202402Report%20and%20Decision%20FINAL.pdf",
+      "https://www.montgomerycountymd.gov/OZAH/Resources/Files/pdf/2024/Hearings/ADW2402/Exhibit%202_ADU%20Preliminary%20Inspection%20Report.pdf"
+    ]
+  },
+  "refresh": false
+}

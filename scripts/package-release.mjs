@@ -1,0 +1,11 @@
+import {cpSync,mkdirSync,readFileSync,readdirSync,writeFileSync} from 'node:fs';
+import path from 'node:path';
+import {createHash} from 'node:crypto';
+const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+const destination=path.resolve('output',`nestopia-vps-${stamp}`);
+mkdirSync(destination,{recursive:true});
+for(const entry of ['src','public','migrations','scripts','tests','docs','deploy','package.json','package-lock.json','tsconfig.json','next-env.d.ts','next.config.ts','vitest.config.ts','Dockerfile','compose.yaml','.dockerignore','.env.example','README.md'])cpSync(entry,path.join(destination,entry),{recursive:true,errorOnExist:true,force:false});
+const files=[];function walk(dir){for(const e of readdirSync(dir,{withFileTypes:true})){const file=path.join(dir,e.name);if(e.isDirectory())walk(file);else files.push({file:path.relative(destination,file).replaceAll('\\','/'),sha256:createHash('sha256').update(readFileSync(file)).digest('hex')});}}walk(destination);
+if(files.some(e=>/(^|\/)(\.env\.local|\.env\.production|nestopia\.sqlite|server\.lock)$/.test(e.file)))throw Error('Release contains private configuration or records');
+writeFileSync(path.join(destination,'release-manifest.json'),JSON.stringify({createdAt:new Date().toISOString(),files},null,2));
+console.log(destination);
